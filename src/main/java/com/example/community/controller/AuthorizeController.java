@@ -23,9 +23,9 @@ public class AuthorizeController {
     private GithubProvider githubProvider;
 
     @Value("${github.client.id}")
-    private  String clientId;
+    private String clientId;
     @Value("${github.client.secret}")
-    private  String clientSecret;
+    private String clientSecret;
     @Value("${github.client.uri}")
     private String clientUri;
 
@@ -33,9 +33,9 @@ public class AuthorizeController {
     private UserMapper userMapper;
 
     @GetMapping("/callback")
-    public String callback(@RequestParam(name = "code")String code,
-                           @RequestParam(name = "state")String state,
-                           HttpServletResponse response){
+    public String callback(@RequestParam(name = "code") String code,
+                           @RequestParam(name = "state") String state,
+                           HttpServletResponse response) {
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
         accessTokenDTO.setClient_id(clientId);
         accessTokenDTO.setClient_secret(clientSecret);
@@ -45,7 +45,7 @@ public class AuthorizeController {
         String accessToken = githubProvider.getAccessToken(accessTokenDTO);
         GithubUser githubUser = githubProvider.getUser(accessToken);
         //System.out.println(user.getName());
-        if (githubUser != null) {
+        if (githubUser != null && githubUser.getId() != null) {
             //登入成功，写cookies和session
             User user = new User();
             String token = UUID.randomUUID().toString();
@@ -54,10 +54,11 @@ public class AuthorizeController {
             user.setAccountId(String.valueOf(githubUser.getId()));
             user.setGmtCreate(System.currentTimeMillis());
             user.setGmtModified(user.getGmtCreate());
+            user.setAvatarUrl(githubUser.getAvatarUrl());
             userMapper.insert(user);
-            response.addCookie(new Cookie("token",token));
+            response.addCookie(new Cookie("token", token));
             return "redirect:/";//重新定向index地址
-        }else{
+        } else {
             //登入失败，重新登入
             return "redirect:/";
         }
